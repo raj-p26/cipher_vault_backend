@@ -28,9 +28,7 @@ export function create(req: Request, res: Response) {
   res.status(201).json({
     status: "success",
     message: "Credentials saved",
-    payload: {
-      credential: c
-    }
+    payload: { credential: c }
   });
 }
 
@@ -47,9 +45,7 @@ export function index(req: Request, res: Response) {
 
   return res.json({
     status: "success",
-    payload: {
-      credentials: userCreds
-    }
+    payload: { credentials: userCreds }
   });
 }
 
@@ -111,6 +107,7 @@ export function update(req: Request, res: Response) {
       message: "Credentials not found"
     });
   }
+  // 9879528289
 
   if (c.user_id !== userID) {
     return res.status(401).json({

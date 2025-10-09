@@ -44,7 +44,7 @@ export class UserTable {
 
     const newUser = this.db
       .prepare<User, any>(
-        "INSERT INTO users(id, username, email, password) VALUES (?, ?, ?, ?) RETURNING *;"
+        "INSERT INTO users(id, username, email, password) VALUES (?, ?, ?, ?) RETURNING id, username, email, inserted_at;"
       )
       .get([userID, user.username, user.email, hashedPassword]);
 

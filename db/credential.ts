@@ -126,8 +126,7 @@ export class CredentialManager {
         bindargs.push(this.encrypt(v));
       }
     });
-    sql = sql.substring(0, sql.length - 1);
-    sql += "WHERE id=? RETURNING *;";
+    sql += "updated_at=CURRENT_TIMESTAMP WHERE id=? RETURNING *;";
     bindargs.push(id);
 
     const updatedCredential = this.db
