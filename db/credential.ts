@@ -3,7 +3,12 @@ import Database from "bun:sqlite";
 import crypto from "crypto";
 import { v4 as uuidV4 } from "uuid";
 import { DB_NAME, ENCRYPTION_KEY, SECRET_IV } from "../utils/env";
-import type { CreateCredential, CreateCredentialDB, Credential, UpdateCredential } from "../@types/credential";
+import type {
+  CreateCredential,
+  CreateCredentialDB,
+  Credential,
+  UpdateCredential,
+} from "../@types/credential";
 
 export class CredentialManager {
   db: Database;
@@ -14,69 +19,77 @@ export class CredentialManager {
 
   constructor() {
     this.db = new Database(DB_NAME);
-    this.key = crypto.createHash('sha512')
+    this.key = crypto
+      .createHash("sha512")
       .update(ENCRYPTION_KEY)
-      .digest('hex')
+      .digest("hex")
       .substring(0, 32);
-    this.encryptionIV = crypto.createHash('sha512')
+    this.encryptionIV = crypto
+      .createHash("sha512")
       .update(SECRET_IV)
-      .digest('hex')
+      .digest("hex")
       .substring(0, 16);
 
     if (!CredentialManager.schemaDumped) {
       const schemaFile = file("./utils/schema.sql");
-      schemaFile.text()
-        .then((schema) => {
-          this.db.run(schema);
-        });
+      schemaFile.text().then((schema) => {
+        this.db.run(schema);
+      });
     }
   }
 
   private encrypt(data: string) {
     const cipher = crypto.createCipheriv(
-      'aes-256-cbc',
+      "aes-256-cbc",
       this.key,
       this.encryptionIV
     );
 
     return Buffer.from(
-      cipher.update(data, 'utf8', 'hex') + cipher.final('hex')
-    ).toString('base64');
+      cipher.update(data, "utf8", "hex") + cipher.final("hex")
+    ).toString("base64");
   }
 
   private decrypt(data: string) {
-    const buff = Buffer.from(data, 'base64');
+    const buff = Buffer.from(data, "base64");
     const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
+      "aes-256-cbc",
       this.key,
       this.encryptionIV
     );
 
     return (
-      decipher.update(buff.toString('utf8'), 'hex', 'utf8') +
-        decipher.final('utf8')
+      decipher.update(buff.toString("utf8"), "hex", "utf8") +
+      decipher.final("utf8")
     );
   }
 
-  createCredentials(credentials: CreateCredential): Credential|null {
+  createCredentials(credentials: CreateCredential): Credential | null {
     const encryptedCredentials: CreateCredentialDB = {
       $id: uuidV4(),
-      $domain: this.encrypt(credentials.domain),
-      $email: this.encrypt(credentials.email),
+      $cred_type: credentials.cred_type,
+      $cred_value: this.encrypt(credentials.cred_value),
       $password: this.encrypt(credentials.password),
+      $comment: credentials.comment
+        ? this.encrypt(credentials.comment)
+        : undefined,
       $user_id: credentials.user_id,
     };
 
     const insertedCredentials = this.db
-      .prepare<Credential, CreateCredentialDB>("INSERT INTO credentials (id, user_id, domain, email, password) VALUES ($id, $user_id, $domain, $email, $password) RETURNING *;")
+      .prepare<Credential, CreateCredentialDB>(
+        "INSERT INTO credentials (id, user_id, cred_type, cred_value, password, comment) VALUES ($id, $user_id, $cred_type, $cred_value, $password, $comment) RETURNING *;"
+      )
       .get({ ...encryptedCredentials });
 
     if (insertedCredentials === null) return null;
 
     const c: Credential = {
       ...insertedCredentials,
-      domain: this.decrypt(insertedCredentials.domain),
-      email: this.decrypt(insertedCredentials.email),
+      comment: insertedCredentials.comment
+        ? this.decrypt(insertedCredentials.comment)
+        : undefined,
+      cred_value: this.decrypt(insertedCredentials.cred_value),
       password: this.decrypt(insertedCredentials.password),
     };
 
@@ -88,15 +101,15 @@ export class CredentialManager {
       .prepare<Credential, string>("SELECT * FROM credentials WHERE user_id=?;")
       .all(userID);
 
-    return credentials.map(c => ({
+    return credentials.map((c) => ({
       ...c,
-      domain: this.decrypt(c.domain),
-      email: this.decrypt(c.email),
+      comment: c.comment ? this.decrypt(c.comment) : undefined,
+      cred_value: this.decrypt(c.cred_value),
       password: this.decrypt(c.password),
     }));
   }
 
-  getCredentialByID(id: string): Credential|null {
+  getCredentialByID(id: string): Credential | null {
     const c = this.db
       .prepare<Credential, string>("SELECT * FROM credentials WHERE id=?;")
       .get(id);
@@ -105,16 +118,17 @@ export class CredentialManager {
 
     return {
       ...c,
-      domain: this.decrypt(c.domain),
-      email: this.decrypt(c.email),
+      comment: c.comment ? this.decrypt(c.comment) : undefined,
+      cred_value: this.decrypt(c.cred_value),
       password: this.decrypt(c.password),
     };
   }
 
   updateCredential(c: UpdateCredential, id: string) {
-    const cred = this.db.prepare<Credential, string>(
-      "SELECT * FROM credentials WHERE id=?;"
-    ).get(id);
+    const cred = this.db
+      .prepare<Credential, string>("SELECT * FROM credentials WHERE id=?;")
+      .get(id);
+    const encryptionFields = ["cred_value", "password", "comment"];
 
     if (cred === null) return null;
 
@@ -123,30 +137,32 @@ export class CredentialManager {
     Object.entries(c).forEach(([k, v]) => {
       if (v !== undefined) {
         sql += `${k}=?,`;
-        bindargs.push(this.encrypt(v));
+        bindargs.push(encryptionFields.includes(k) ? this.encrypt(v) : v);
       }
     });
     sql += "updated_at=CURRENT_TIMESTAMP WHERE id=? RETURNING *;";
     bindargs.push(id);
 
     const updatedCredential = this.db
-      .prepare<Credential,string[]>(sql)
+      .prepare<Credential, string[]>(sql)
       .get(...bindargs);
 
     if (updatedCredential === null) return null;
 
     return {
       ...updatedCredential,
-      domain: this.decrypt(updatedCredential.domain),
-      email: this.decrypt(updatedCredential.email),
+      comment: updatedCredential.comment
+        ? this.decrypt(updatedCredential.comment)
+        : undefined,
+      cred_value: this.decrypt(updatedCredential.cred_value),
       password: this.decrypt(updatedCredential.password),
     };
   }
 
-  deleteCredential(id: string): string|null {
-    const cred = this.db.prepare<Credential, string>(
-      "SELECT * FROM credentials WHERE id=?;"
-    ).get(id);
+  deleteCredential(id: string): string | null {
+    const cred = this.db
+      .prepare<Credential, string>("SELECT * FROM credentials WHERE id=?;")
+      .get(id);
 
     if (cred === null) return "Credentials not found";
 

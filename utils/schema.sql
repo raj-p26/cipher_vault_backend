@@ -8,14 +8,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS credentials (
   id VARCHAR(36) NOT NULL PRIMARY KEY,
-  domain TEXT NOT NULL,
-  email TEXT NOT NULL,
+  cred_type VARCHAR(255) NOT NULL,
+  cred_value VARCHAR(255) NOT NULL,
   password TEXT NOT NULL,
   user_id VARCHAR(36) NOT NULL,
+  comment TEXT,
   inserted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS credentials_domain_idx ON credentials(domain);
-

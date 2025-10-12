@@ -5,15 +5,7 @@ import { CredentialManager } from "../db/credential";
 const credentialManager = new CredentialManager();
 
 export function create(req: Request, res: Response) {
-  const userID = req.headers['user-id'];
-
-  if (userID === undefined) {
-    return res.status(401).json({
-      status: "failed",
-      message: "You are unauthorized",
-    });
-  }
-
+  const userID = req.headers["user-id"];
   const creds = req.body as CreateCredential;
   creds.user_id = userID as string;
 
@@ -28,41 +20,27 @@ export function create(req: Request, res: Response) {
   res.status(201).json({
     status: "success",
     message: "Credentials saved",
-    payload: { credential: c }
+    payload: { credential: c },
   });
 }
 
 export function index(req: Request, res: Response) {
-  const userID = req.headers['user-id'];
-  if (userID === undefined) {
-    return res.status(401).json({
-      status: "failed",
-      message: "You are unauthorized"
-    });
-  }
-
+  const userID = req.headers["user-id"];
   const userCreds = credentialManager.getCredentialsByUserID(userID as string);
 
   return res.json({
     status: "success",
-    payload: { credentials: userCreds }
+    payload: { credentials: userCreds },
   });
 }
 
 export function show(req: Request, res: Response) {
-  const userID = req.headers['user-id'];
-  if (userID === undefined) {
-    return res.status(401).json({
-      status: "failed",
-      message: "You are unauthorized"
-    });
-  }
+  const credentialID = req.params["id"];
 
-  const credentialID = req.params['id'];
   if (credentialID === undefined) {
     return res.status(400).json({
       status: "failed",
-      message: "Please provide a credential ID"
+      message: "Please provide a credential ID",
     });
   }
 
@@ -71,7 +49,7 @@ export function show(req: Request, res: Response) {
   if (c === null) {
     return res.status(404).json({
       status: "failed",
-      message: "Credentials not found"
+      message: "Credentials not found",
     });
   }
 
@@ -83,19 +61,13 @@ export function show(req: Request, res: Response) {
 }
 
 export function update(req: Request, res: Response) {
-  const userID = req.headers['user-id'];
-  if (userID === undefined) {
-    return res.status(401).json({
-      status: "failed",
-      message: "You are unauthorized"
-    });
-  }
+  const userID = req.headers["user-id"];
 
-  const credentialID = req.params['id'];
+  const credentialID = req.params["id"];
   if (credentialID === undefined) {
     return res.status(400).json({
       status: "failed",
-      message: "Please provide a credential ID"
+      message: "Please provide a credential ID",
     });
   }
 
@@ -104,25 +76,28 @@ export function update(req: Request, res: Response) {
   if (c === null) {
     return res.status(404).json({
       status: "failed",
-      message: "Credentials not found"
+      message: "Credentials not found",
     });
   }
-  // 9879528289
 
   if (c.user_id !== userID) {
     return res.status(401).json({
       status: "failed",
-      message: "You are unauthorized"
+      message: "You are unauthorized",
     });
   }
 
   const updateCredentialData: UpdateCredential = {
-    domain: req.body['domain'] || undefined,
-    email: req.body['email'] || undefined,
-    password: req.body['password'] || undefined,
+    cred_type: req.body["cred_tye"],
+    cred_value: req.body["cred_value"],
+    comment: req.body["comment"],
+    password: req.body["password"],
   };
 
-  const updatedCreds = credentialManager.updateCredential(updateCredentialData, credentialID);
+  const updatedCreds = credentialManager.updateCredential(
+    updateCredentialData,
+    credentialID
+  );
 
   if (updatedCreds === null) {
     return res.status(500).json({
@@ -134,24 +109,18 @@ export function update(req: Request, res: Response) {
   res.json({
     status: "success",
     message: "Credential updated successfully",
-    payload: { credential: updatedCreds }
+    payload: { credential: updatedCreds },
   });
 }
 
 export function destroy(req: Request, res: Response) {
-  const userID = req.headers['user-id'];
-  if (userID === undefined) {
-    return res.status(401).json({
-      status: "failed",
-      message: "You are unauthorized"
-    });
-  }
+  const userID = req.headers["user-id"];
+  const credentialID = req.params["id"];
 
-  const credentialID = req.params['id'];
   if (credentialID === undefined) {
     return res.status(400).json({
       status: "failed",
-      message: "Please provide a credential ID"
+      message: "Please provide a credential ID",
     });
   }
   const c = credentialManager.getCredentialByID(credentialID);
@@ -159,14 +128,14 @@ export function destroy(req: Request, res: Response) {
   if (c === null) {
     return res.status(404).json({
       status: "failed",
-      message: "Credentials not found"
+      message: "Credentials not found",
     });
   }
 
   if (c.user_id !== userID) {
     return res.status(401).json({
       status: "failed",
-      message: "You are unauthorized"
+      message: "You are unauthorized",
     });
   }
 
@@ -181,10 +150,4 @@ export function destroy(req: Request, res: Response) {
   return res.status(204).json();
 }
 
-export default {
-  create,
-  index,
-  show,
-  update,
-  destroy,
-};
+export default { create, destroy, index, show, update };

@@ -5,8 +5,8 @@ import { CredentialManager } from "../../db/credential";
 const defaultUserID = uuidV4();
 const defaultCredential: CreateCredential = {
   user_id: defaultUserID,
-  domain: "www.example.com",
-  email: "test@example.com",
+  cred_type: "domain",
+  cred_value: "https://www.example.com",
   password: "test-password",
 };
 
@@ -19,5 +19,5 @@ function create(creds: CreateCredential = defaultCredential) {
 export default {
   defaultUserID,
   defaultCredential,
-  create
+  create,
 };
