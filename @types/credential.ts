@@ -1,7 +1,7 @@
 export type Credential = {
   id: string;
   cred_type: string;
-  cred_value: string;
+  cred_value?: string;
   password: string;
   user_id: string;
   comment?: string;

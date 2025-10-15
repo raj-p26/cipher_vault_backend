@@ -65,10 +65,12 @@ export class CredentialManager {
   }
 
   createCredentials(credentials: CreateCredential): Credential | null {
+    const encryptedCredValue = credentials.cred_value ? this.encrypt(credentials.cred_value) : undefined;
+
     const encryptedCredentials: CreateCredentialDB = {
       $id: uuidV4(),
       $cred_type: credentials.cred_type,
-      $cred_value: this.encrypt(credentials.cred_value),
+      $cred_value: encryptedCredValue,
       $password: this.encrypt(credentials.password),
       $comment: credentials.comment
         ? this.encrypt(credentials.comment)
@@ -89,7 +91,7 @@ export class CredentialManager {
       comment: insertedCredentials.comment
         ? this.decrypt(insertedCredentials.comment)
         : undefined,
-      cred_value: this.decrypt(insertedCredentials.cred_value),
+      cred_value: insertedCredentials.cred_value ? this.decrypt(insertedCredentials.cred_value) : undefined,
       password: this.decrypt(insertedCredentials.password),
     };
 
@@ -104,7 +106,7 @@ export class CredentialManager {
     return credentials.map((c) => ({
       ...c,
       comment: c.comment ? this.decrypt(c.comment) : undefined,
-      cred_value: this.decrypt(c.cred_value),
+      cred_value: c.cred_value ? this.decrypt(c.cred_value) : undefined,
       password: this.decrypt(c.password),
     }));
   }
@@ -119,7 +121,7 @@ export class CredentialManager {
     return {
       ...c,
       comment: c.comment ? this.decrypt(c.comment) : undefined,
-      cred_value: this.decrypt(c.cred_value),
+      cred_value: c.cred_value ? this.decrypt(c.cred_value) : undefined,
       password: this.decrypt(c.password),
     };
   }
@@ -134,6 +136,7 @@ export class CredentialManager {
 
     let bindargs = [];
     let sql = "UPDATE credentials SET ";
+    console.log("Update cred:", c);
     Object.entries(c).forEach(([k, v]) => {
       if (v !== undefined) {
         sql += `${k}=?,`;
@@ -142,6 +145,7 @@ export class CredentialManager {
     });
     sql += "updated_at=CURRENT_TIMESTAMP WHERE id=? RETURNING *;";
     bindargs.push(id);
+    console.log(sql, bindargs);
 
     const updatedCredential = this.db
       .prepare<Credential, string[]>(sql)
@@ -154,7 +158,7 @@ export class CredentialManager {
       comment: updatedCredential.comment
         ? this.decrypt(updatedCredential.comment)
         : undefined,
-      cred_value: this.decrypt(updatedCredential.cred_value),
+      cred_value: updatedCredential.cred_value ? this.decrypt(updatedCredential.cred_value) : undefined,
       password: this.decrypt(updatedCredential.password),
     };
   }

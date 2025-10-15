@@ -88,7 +88,7 @@ export function update(req: Request, res: Response) {
   }
 
   const updateCredentialData: UpdateCredential = {
-    cred_type: req.body["cred_tye"],
+    cred_type: req.body["cred_type"],
     cred_value: req.body["cred_value"],
     comment: req.body["comment"],
     password: req.body["password"],

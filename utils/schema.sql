@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS credentials (
   id VARCHAR(36) NOT NULL PRIMARY KEY,
   cred_type VARCHAR(255) NOT NULL,
-  cred_value VARCHAR(255) NOT NULL,
+  cred_value VARCHAR(255),
   password TEXT NOT NULL,
   user_id VARCHAR(36) NOT NULL,
   comment TEXT,
