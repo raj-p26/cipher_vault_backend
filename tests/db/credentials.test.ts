@@ -18,18 +18,20 @@ describe("credentials table tests", () => {
     newCredential = newCredential!;
 
     expect(newCredential.user_id).toEqual(defaultCredential.user_id);
-    expect(newCredential.domain).toEqual(defaultCredential.domain);
-    expect(newCredential.email).toEqual(defaultCredential.email);
+    expect(newCredential.cred_type).toEqual(defaultCredential.cred_type);
+    expect(newCredential.cred_value).toEqual(defaultCredential.cred_value);
+    expect(newCredential.comment).toEqual(defaultCredential.comment);
     expect(newCredential.password).toEqual(defaultCredential.password);
     insertedRecords++;
   });
 
   it("should return a single credential by ID", () => {
     let c = credentialFixture.create({
+      comment: "This is a comment",
       user_id: defaultCredential.user_id,
-      domain: "www.google.com",
+      cred_type: "domain",
       password: "another-password",
-      email: "test2@gmail.com",
+      cred_value: "www.google.com",
     });
     insertedRecords++;
 
@@ -42,24 +44,28 @@ describe("credentials table tests", () => {
   it("should update a credential", () => {
     let c = credentialFixture.create({
       user_id: defaultCredential.user_id,
-      domain: "www.yahoo.com",
+      cred_type: "www.yahoo.com",
       password: "yet-another-password",
-      email: "test3@gmail.com",
+      cred_value: "test3@gmail.com",
+      comment: "This is a comment",
     });
     insertedRecords++;
 
     expect(c).not.toBeNull();
 
-    const newDomain = "www.testing.com";
-    const newEmail = "test3@example.com";
+    const cred_type = "www.testing.com";
+    const cred_value = "test3@example.com";
 
-    const cred = credentialManager.updateCredential({
-      domain: newDomain,
-      email: newEmail
-    }, c!.id);
+    const cred = credentialManager.updateCredential(
+      { cred_type, cred_value },
+      c!.id
+    );
 
     expect(cred).not.toBeNull();
-    expect([cred!.email, cred!.domain]).toEqual([newEmail, newDomain]);
+    expect([cred!.cred_value, cred!.cred_type]).toEqual([
+      cred_value,
+      cred_type,
+    ]);
   });
 
   it("should return credential of a user", () => {
