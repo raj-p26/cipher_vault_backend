@@ -92,6 +92,7 @@ export function update(req: Request, res: Response) {
     cred_value: req.body["cred_value"],
     comment: req.body["comment"],
     password: req.body["password"],
+    pinned: req.body["pinned"],
   };
 
   const updatedCreds = credentialManager.updateCredential(

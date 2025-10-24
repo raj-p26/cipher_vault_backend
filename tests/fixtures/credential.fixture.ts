@@ -8,6 +8,7 @@ const defaultCredential: CreateCredential = {
   cred_type: "domain",
   cred_value: "https://www.example.com",
   password: "test-password",
+  pinned: 0
 };
 
 const credentialManager = new CredentialManager();
