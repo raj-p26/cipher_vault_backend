@@ -7,6 +7,7 @@ export type Credential = {
   comment?: string;
   inserted_at: string;
   updated_at: string;
+  pinned?: 0 | 1;
 };
 
 export type CreateCredential = Omit<

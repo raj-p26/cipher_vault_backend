@@ -76,11 +76,12 @@ export class CredentialManager {
         ? this.encrypt(credentials.comment)
         : undefined,
       $user_id: credentials.user_id,
+      $pinned: credentials.pinned || 0,
     };
 
     const insertedCredentials = this.db
       .prepare<Credential, CreateCredentialDB>(
-        "INSERT INTO credentials (id, user_id, cred_type, cred_value, password, comment) VALUES ($id, $user_id, $cred_type, $cred_value, $password, $comment) RETURNING *;"
+        "INSERT INTO credentials (id, user_id, cred_type, cred_value, password, comment, pinned) VALUES ($id, $user_id, $cred_type, $cred_value, $password, $comment, $pinned) RETURNING *;"
       )
       .get({ ...encryptedCredentials });
 
@@ -136,16 +137,14 @@ export class CredentialManager {
 
     let bindargs = [];
     let sql = "UPDATE credentials SET ";
-    console.log("Update cred:", c);
     Object.entries(c).forEach(([k, v]) => {
       if (v !== undefined) {
         sql += `${k}=?,`;
-        bindargs.push(encryptionFields.includes(k) ? this.encrypt(v) : v);
+        bindargs.push(encryptionFields.includes(k) ? this.encrypt(v as string) : v);
       }
     });
     sql += "updated_at=CURRENT_TIMESTAMP WHERE id=? RETURNING *;";
     bindargs.push(id);
-    console.log(sql, bindargs);
 
     const updatedCredential = this.db
       .prepare<Credential, string[]>(sql)

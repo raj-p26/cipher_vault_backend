@@ -22,6 +22,7 @@ describe("credentials table tests", () => {
     expect(newCredential.cred_value).toEqual(defaultCredential.cred_value);
     expect(newCredential.comment).toEqual(defaultCredential.comment);
     expect(newCredential.password).toEqual(defaultCredential.password);
+    expect(newCredential.pinned).toEqual(defaultCredential.pinned);
     insertedRecords++;
   });
 
@@ -32,6 +33,7 @@ describe("credentials table tests", () => {
       cred_type: "domain",
       password: "another-password",
       cred_value: "www.google.com",
+      pinned: true,
     });
     insertedRecords++;
 
@@ -66,6 +68,26 @@ describe("credentials table tests", () => {
       cred_value,
       cred_type,
     ]);
+  });
+
+  it("should update a credential partially", () => {
+    const c = credentialFixture.create({
+      user_id: defaultCredential.user_id,
+      cred_type: "www.yahoo.com",
+      password: "yet-another-password",
+      cred_value: "test3@gmail.com",
+      comment: "This is a comment",
+    });
+    insertedRecords++;
+
+    expect(c).not.toBeNull();
+
+    const updatedCred = credentialManager.updateCredential({
+      pinned: 1
+    }, c!.id);
+
+    expect(updatedCred).not.toBeNull();
+    expect(updatedCred!.pinned).toBe(1);
   });
 
   it("should return credential of a user", () => {

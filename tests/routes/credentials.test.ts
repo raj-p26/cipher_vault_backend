@@ -140,10 +140,7 @@ describe("/credentials tests", () => {
     resp = await request(app)
       .patch(`/credentials/${c["id"]}`)
       .set("Authorization", user.token)
-      .send({
-        cred_type,
-        cred_value,
-      });
+      .send({ cred_type, cred_value });
 
     expect(resp.statusCode).toBe(200);
     expect(resp.body).toBeObject();
@@ -156,6 +153,40 @@ describe("/credentials tests", () => {
       cred_type,
       cred_value,
     ]);
+  });
+
+  it("should pin a credential", async () => {
+    const credentials = {
+      cred_type: "domain",
+      cred_value: "www.example.com",
+      password: "test-password",
+    };
+
+    let resp = await request(app)
+      .post("/credentials")
+      .set("Authorization", user.token)
+      .send({ ...credentials });
+
+    expect(resp.statusCode).toBe(201);
+    expect(resp.body).toBeObject();
+    expect(resp.body).toHaveProperty("status");
+    expect(resp.body).toHaveProperty("payload");
+    expect(resp.body["status"]).toEqual("success");
+    const c = resp.body["payload"]["credential"];
+
+    resp = await request(app)
+      .patch(`/credentials/${c["id"]}`)
+      .set("Authorization", user.token)
+      .send({ pinned: 1 });
+
+    expect(resp.statusCode).toBe(200);
+    expect(resp.body).toBeObject();
+    expect(resp.body).toHaveProperty("status");
+    expect(resp.body).toHaveProperty("payload");
+    expect(resp.body["status"]).toEqual("success");
+    const returnedCred = resp.body["payload"]["credential"];
+
+    expect(returnedCred.pinned).toBe(1);
   });
 
   it("should delete a credential", async () => {
