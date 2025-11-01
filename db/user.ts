@@ -1,5 +1,5 @@
 import { file, password as bunPassword } from "bun";
-import Database from "bun:sqlite";
+import Database, { SQLiteError } from "bun:sqlite";
 import { v4 as uuidV4 } from "uuid";
 import { DB_NAME } from "../utils/env";
 import type { LoginUser, RegisterUser, User, UserDB } from "../@types/user";
@@ -76,6 +76,52 @@ export class UserTable {
     };
 
     return [u, null];
+  }
+
+  updateUser(u: Partial<RegisterUser>, id: string) {
+    const args: string[] = [];
+    let query = "UPDATE users SET ";
+
+    Object.entries(u).forEach(([k, v]) => {
+      if (!v || k === "password") return;
+
+      query += `${k}=?,`;
+      args.push(v);
+    });
+
+    query = query.substring(0, query.length - 1);
+    query += " WHERE id=?;";
+    args.push(id);
+
+    try {
+      this.db.prepare(query).run(...args);
+      return null;
+    } catch (e) {
+      if (e instanceof SQLiteError) return e.message;
+      return "Something went wrong";
+    }
+  }
+
+  updatePassword(oldPassword: string, newPassword: string, userID: string) {
+    const user = this.db
+      .prepare<any, string>("SELECT password from users WHERE id=?;")
+      .get(userID);
+
+    if (user === null) return "User not found";
+
+    if (!bunPassword.verifySync(oldPassword, user.password, "bcrypt")) {
+      return "Wrong password";
+    }
+
+    const hashed = bunPassword.hashSync(newPassword, {
+      algorithm: "bcrypt",
+      cost: 4,
+    });
+
+    this.db.prepare("UPDATE users SET password=? WHERE id=?;")
+      .run(hashed, userID);
+
+    return null;
   }
 
   getUserByID(id: string): User | null {
