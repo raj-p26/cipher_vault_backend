@@ -49,6 +49,50 @@ describe("/auth tests", () => {
     expect(resp.body["status"]).toEqual("success");
   });
 
+  it("should update the user credentials", async () => {
+    let resp = await request(app).post("/auth/register").send({
+      username: "test",
+      email: "test2@gmail.com",
+      password: "test-password",
+    });
+
+    expect(resp.statusCode).toBe(201);
+    const token = resp.body["payload"]["token"];
+
+    const newUsername = "tester";
+    const newEmail = "tester@gmail.com";
+    resp = await request(app)
+      .patch("/auth/edit")
+      .set("Authorization", token)
+      .send({
+        username: newUsername,
+        email: newEmail,
+      });
+
+    expect(resp.statusCode).toBe(204);
+  });
+
+  it("should update user password", async () => {
+    let resp = await request(app).post("/auth/register").send({
+      username: "test",
+      email: "test22@gmail.com",
+      password: "test-password",
+    });
+
+    expect(resp.statusCode).toBe(201);
+    const token = resp.body["payload"]["token"];
+
+    resp = await request(app)
+      .patch("/auth/update-password")
+      .set("Authorization", token)
+      .send({
+        oldPassword: "test-password",
+        newPassword: "t35t-p455w0rd",
+      });
+
+    expect(resp.statusCode).toBe(204);
+  });
+
   it("should return 500 if login credentials are invalid", async () => {
     const resp = await request(app).post("/auth/login").send({
       email: "test@gmail.com",
